@@ -1,0 +1,11 @@
+image:
+  registry: aquasec
+  repository: kube-bench
+  tag: latest
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+schedule: "*/5 * * * *"

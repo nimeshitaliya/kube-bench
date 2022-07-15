@@ -1,0 +1,55 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "kube-bench.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  schedule: {{ include "kube-bench.schedule" . }}
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: {{ include "kube-bench.fullname" . }}
+        spec:
+        {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 8 }}
+        {{- end }}
+          hostPID: true
+          containers:
+            - name: {{ .Chart.Name }}
+              image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+              command:
+                [
+                  "kube-bench",
+                  "run",
+                  "--targets",
+                  "node",
+                  "--benchmark",
+                  "eks-1.0.1",
+                ]
+              volumeMounts:
+                - name: var-lib-kubelet
+                  mountPath: /var/lib/kubelet
+                  readOnly: true
+                - name: etc-systemd
+                  mountPath: /etc/systemd
+                  readOnly: true
+                - name: etc-kubernetes
+                  mountPath: /etc/kubernetes
+                  readOnly: true
+          restartPolicy: Never
+          volumes:
+            - name: var-lib-kubelet
+              hostPath:
+                path: "/var/lib/kubelet"
+            - name: etc-systemd
+              hostPath:
+                path: "/etc/systemd"
+            - name: etc-kubernetes
+              hostPath:
+                path: "/etc/kubernetes"
